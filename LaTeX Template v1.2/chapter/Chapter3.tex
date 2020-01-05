@@ -1,0 +1,346 @@
+\chapter{系统需求分析与概要设计}
+
+\section{项目总体规划}
+
+\subsection{系统合理性概述}
+
+证券投资基金是证券市场发展的必然产物，在发达国家已有上百年的历史。
+一些人认为早在1822年荷兰国王威廉姆一世就创立了私人信托投资基金。
+也有人倾向1868年英国成立的“海外及殖民地政府信托基金”看作最早的基金。
+中国基金从1992年开始开始发展，基金规范化运作不断提高，法律体系日益完善，
+基金品种日益丰富，基金规模持续增长。
+
+因为监管要求，基金公司不直接持有投资人基金，投资人的基金多是商业银行代为保管。
+另外银行银行，证券公司还负责一部分基金的销售。
+伴随着业务的高速增长，各基金公司合作的商业伙伴也成倍增长，
+每日需要将业务情况进行汇总，定时向合作公司发送报表，账单，文件。
+人工发送文件效率低，浪费时间。
+文件内容多涉及商业机密，手工发送容易出错。
+开发的小工具适应范围小，功能各有高低，重复建设严重。
+需要将公司内部已有服务进行整合，开发一个文件发送平台，兼容当前的多种文件格式
+和发送需求，统一进行文件发送管理，降低使用和开发成本。
+
+本项目整体前后端分离，后端使用SpringBoot进行搭建，
+前端使用Vue和ElementUI搭建。
+选用Java编程语言。
+传统Web项目开发效率低，代码配置多，构建部署复杂，随着Spring框架的发展，
+具由开箱即用，约定由于配置的SpringBoot成为了快速开发的主流框架。
+并且和公司当前的技术体系一致。
+
+Vue是轻量级的框架，支持双向数据绑定，对控件的交互性能好，
+学习成本低，易于和其他框架结合使用。
+Java是Web开发主流的语言，虚拟机运行，不依赖特定平台；支持多线程，性能高；
+语言成熟安全，有大量参考资料。
+Java的接口与运行绑定给系统提供了一定的扩展性，有利于方便以后业务的新增。
+
+\subsection{涉众分析}
+
+文件自动发送平台的使用人群主要是公司的业务人员和开发人员。
+业务人员需要将导出的大量报表发送给相应的合作商，
+开发人员可以调用封装的发送API，免去繁琐的文件处理。
+
+
+\section{系统功能性需求分析}
+
+本文中，文件自动发送平台主体可以分为元数据管理模块，发送规则模块，
+任务调度管理模块，文件处理模块，文件路由模块和文件发送模块
+
+\subsection{元数据管理模块功能需求}
+
+元数据管理模块主要功能为提供联系人的展示和修改，
+联系人主要是从其他表中由运维人员手动导入，本系统只需提供联系人的修改和展示功能。
+
+\subsection{发送规则模块功能需求}
+
+通常的业务逻辑是用户从另外的系统导出报表或者手动生成好报表文件，
+然后把文件放到机器的共享文件下，
+由系统约定的时间去读取约定的文件夹下的文件，
+根据文件名的格式确定收件人进而发送。
+规则模块就是用户和系统约定文件名的格式，选择文件发送频率、发送方式，
+文件是否需要加密，是否约定发送时间，
+发送前是否需要用户点击确认以及生成调度任务等功能。
+
+\subsection{任务调度管理模块功能需求}
+
+本模块负责不间断轮询未完成的任务，协调任务在不同模块间推进，
+管理任务的生命周期。
+任务调度的任务主要分为三类，一种是由规则定期生成的任务，
+第二种是用户使用前端页面提交的任务，
+第三种是开发人员使用API提交的任务。
+这些任务的初始状态不一，规则生成的任务文件通常还未生成，
+用户前端页面上传的文件是压缩包，API调用传递的文件是base64字串。
+不同文件的放松方式可能有传真、邮件，或者二者皆有。
+任务调度模块负责解析任务当前状态，合理调用文件相关接口和发送相关接口处理任务，
+推进任务进行、中断任务或者重置任务的状态。
+另外还需要提供前端展示任务的数据接口。
+
+\subsection{文件处理模块功能需求}
+
+业务的报表文件存在相当一部分是从另外的系统中导出的，
+用户希望能将这一部分文件生成的功能也集成到平台中。
+不同类型的报表中的格式通常不一致，为了能够支持多种文件，
+文件生成模块定义了一组文件相关的接口，主要涉及文件的生成，转化，加密。
+文件的生成是基础功能，转化是为了适应传真的底层接口参数需要，
+加密则是使用邮件发送时存在对附件文件加密的需求。
+开发人员通过实现这组接口来支持不同类型的文件。
+此外还需要支持文件的下载功能，方便用户下载自动自动生成的文件，
+查看文件的正确性后决定是否发送。
+
+\subsection{文件路由模块功能需求}
+对于未明确指定文件接收人的文件，识别文件内容，分析文件接收人。
+
+\subsection{文件发送模块功能需求}
+
+公司已有邮件服务器和传真服务器，但是二者的参数差异大，
+并且对发送重试的支持不友好。
+文件发送模块主要提供了传真、邮件、短信服务的封装，支持发送任务的错误重试。
+
+\section{系统非功能性需求分析}
+
+易操作性：使用交互性良好的Vue前端框架，尽可能简化操作页面，降低公司业务人员的使用成本。
+
+可扩展性：文件处理特别是其中的文件生成具有特定的业务场景要求，定义一组规范的文件接口，使得系统能具备扩展性，支持导出新的文件内容而不影响现有业务。
+
+\section{系统外部接口需求分析}
+
+文件自动发送平台提供对常见文件类型的传真和邮件的支持，开发API接口供开发人员调用。
+
+
+\section{系统概要设计}
+
+\subsection{系统总体架构设计}
+
+早期公司已经搭建有邮件服务器，开发人员通过SMTP协议即可发送邮件，通用性较好
+但每次使用都需要自己构造MimeMessage对象，没有开发专用发送文件的接口，
+期望平台能够提供直接传入文件的接口。
+传真服务器的参数要求传入图片文件的base64编码的字串，
+我们通常使用的PDF和Excel都不能直接使用接口，需要将他们转换为tif格式的图片再使用base64进行编码。
+此外，传真服务未提供失败重试功能。
+
+针对以上需求，本文所介绍的文件自动发送平台采用模块化开发的方案，将系统分为元数据管理模块，发送规则模块，任务调度管理模块，文件处理模块，文件路由模块和文件发送模块。
+模块化是一种处理复杂系统分解为更好的可管理模块的方式，对业务进行模块化拆分后，可以使各业务模块间业务逻辑清晰，功能单一，提高开发效率。
+
+各个模块之间的关系如图 ~\ref{module1} 所示
+\begin{figure}[!t]
+	\centering
+	\includegraphics[width=\linewidth]{codepic/module1.png}
+	\caption{模块关系图}\label{module1}
+\end{figure}
+
+
+\subsection{数据库设计}
+系统主要涉及的数据表有
+代理商信息表 T\_TA\_AGENCY\_INFO\_RECORD (表~\ref{table:metadataDefTab})、
+发送规则表 T\_TA\_RULE\_RECORD (表~\ref{table:ruleDefTab})、
+任务运行表 T\_TA\_TASK\_RECORD (表~\ref{table:taskDefTab})、
+文件处理表 T\_TA\_FILE\_RECORD (表~\ref{table:fileDefTab})、
+传真发送表 T\_TA\_SEND\_FAX\_RECORD (表~\ref{table:faxDefTab})、
+邮件发送表 T\_TA\_SEND\_MAIL\_RECORD (表~\ref{table:mailDefTab})、
+
+
+\begin{table}[htb]\footnotesize
+	\centering
+	\caption{代理商表结构}
+	\vspace{2mm}
+	% l - left, r - right, c - center. | means one vertical line 这里声明的是表格单元中的内容如何对齐
+	\begin{tabular}{ccc}
+		\hline
+		\textbf{字段名}&\textbf{类型}&\textbf{备注}\\
+		\hline
+		VC\_AGENT\_NO&VARCHAR2 (20)&销售商编号\\
+		\hline
+		VC\_AGENT\_NAME&VARCHAR2 (100)&销售商名称\\
+		\hline
+		VC\_AGENT\_TEL&VARCHAR2 (20)&销售商手机号\\
+		\hline
+		VC\_AGENT\_MAIL&VARCHAR2 (60)&销售商邮箱\\
+		\hline
+		VC\_AGENT\_FAX&VARCHAR2 (20)&销售商传真号\\
+		\bottomrule
+	\end{tabular}
+	\label{table:metadataDefTab}
+\end{table}
+
+
+\begin{table}[htb]\footnotesize
+	\centering
+	\caption{发送规则表结构}
+	\vspace{2mm}
+	% l - left, r - right, c - center. | means one vertical line 这里声明的是表格单元中的内容如何对齐
+	\begin{tabular}{ccc}
+		\hline
+		\textbf{字段名}&\textbf{类型}&\textbf{备注}\\
+		\hline
+		L\_RULE\_ID&NUMBER(10,0)&规则ID\\
+		\hline
+		VC\_RULE\_TYPE&VARCHAR2 (20)&规则类型\\
+		\hline
+		SEND\_TYPES&VARCHAR2 (20)&发送类型\\
+		\hline
+		C\_FILE\_ENCRYPTED&Bit (1)&是否文件加密\\
+		\hline
+		C\_AUTO\_SEND&Bit (1)&是否自动发送\\
+		\bottomrule
+	\end{tabular}
+	\label{table:ruleDefTab}
+\end{table}
+
+\begin{table}[htb]\footnotesize
+	\centering
+	\caption{任务运行表结构}
+	\vspace{2mm}
+	% l - left, r - right, c - center. | means one vertical line 这里声明的是表格单元中的内容如何对齐
+	\begin{tabular}{ccc}
+		\hline
+		\textbf{字段名}&\textbf{类型}&\textbf{备注}\\
+		\hline
+		L\_TASK\_ID&NUMBER(10,0)&任务ID\\
+		\hline
+		D\_TASK\_DATE&VARCHAR2 (20)&任务时间\\
+		\hline
+		VC\_TASK\_NAME&VARCHAR2 (20)&任务名称\\
+		\hline
+		L\_RULE\_ID&NUMBER(10,0)&规则ID\\
+		\hline
+		L\_MAIL\_ID&NUMBER(10,0)&邮件ID\\
+		\hline
+		L\_FILE\_ID&NUMBER(10,0)&文件ID\\
+		\hline
+		L\_FAX\_ID&NUMBER(10,0)&传真ID\\
+		\hline
+		TASK\_STAGE&NUMBER(10,0)&任务状态\\
+		\hline
+		VC\_TASK\_TYPE&VARCHAR2 (20)&任务类型\\
+		\hline
+		VC\_RULE\_TYPE&VARCHAR2 (20)&规则类型\\
+		\bottomrule
+	\end{tabular}
+	\label{table:taskDefTab}
+\end{table}
+
+\begin{table}[htb]\footnotesize
+\centering
+\caption{文件处理表结构}
+\vspace{2mm}
+% l - left, r - right, c - center. | means one vertical line 这里声明的是表格单元中的内容如何对齐
+\begin{tabular}{ccc}
+	\hline
+	\textbf{字段名}&\textbf{类型}&\textbf{备注}\\
+	\hline
+	L\_FILE\_ID&NUMBER(10,0)&文件ID\\
+	\hline
+	D\_SCHEDULED\_DATE\_TIME&VARCHAR2 (20)&调度最早时间\\
+	\hline
+	D\_FILE\_START\_DATE&VARCHAR2 (20)&文件数据开发时间\\
+	\hline
+	D\_FILE\_END\_DATE&VARCHAR2 (20)&文件数据结束时间\\
+	\hline
+	VC\_FILE\_SUFFIX&VARCHAR2 (20)&文件后缀名\\
+	\hline
+	VC\_FILE\_REALLY\_KEY&VARCHAR2 (20)&文件密钥\\
+	\hline
+	VC\_FILE\_SRC\_PATH&VARCHAR2 (100)&原始文件路径\\
+	\hline
+	VC\_FILE\_FINAL\_PATH&VARCHAR2 (100)&处理后文件路径\\
+	\hline
+	VC\_FILE\_FAX\_PATH&VARCHAR2 (100)&图片文件路径\\
+	\hline
+	C\_SUCCESS&Bit (1)&任务是否成功\\
+	\hline
+	C\_SKIP\_SRC\_GENERATE&Bit (1)&是否跳过原始文件生成\\
+	\hline
+	C\_LACK\_DATA&Bit (1)&是否允许缺失数据\\
+	\hline
+	C\_OVER&Bit (1)&任务是否结束\\
+	\hline
+	C\_HORIZONTAL&Bit (1)&是否是A4水平排版\\
+	\hline
+	VC\_ERROR\_DESC&VARCHAR2 (500)&错误详情\\
+	\hline
+	D\_FILE\_CREATE\_TIME&VARCHAR2 (20)&文件生成时间\\
+	\hline
+	VC\_RULE\_TYPE&VARCHAR2 (20)&规则类型\\
+	\bottomrule
+\end{tabular}
+\label{table:fileDefTab}
+\end{table}
+
+\begin{table}[htb]\footnotesize
+	\centering
+	\caption{传真发送表结构}
+	\vspace{2mm}
+	% l - left, r - right, c - center. | means one vertical line 这里声明的是表格单元中的内容如何对齐
+	\begin{tabular}{ccc}
+		\hline
+		\textbf{字段名}&\textbf{类型}&\textbf{备注}\\
+		\hline
+		L\_FAX\_ID&NUMBER(10,0)&传真ID\\
+		\hline
+		VC\_FAX\_NUMBER&VARCHAR2 (20)&收件人传真号\\
+		\hline
+		VC\_SUBJECT&VARCHAR2 (20)&传真主题\\
+		\hline
+		VC\_RECEIVER&VARCHAR2 (20)&收件人名称\\
+		\hline
+		VC\_MESSAGE&VARCHAR2 (20)&传真信息\\
+		\hline
+		D\_SCHEDULED\_DATETIME&VARCHAR2 (20)&调度最早时间\\
+		\hline
+		VC\_ACCESS\_NUMBER&VARCHAR2 (20)&传真任务响应编号\\
+		\hline
+		VC\_RESULT&VARCHAR2 (20)&传真任务响应码\\
+		\hline
+		L\_SEND\_TIMES&NUMBER(10,0)&发送次数\\
+		\hline
+		L\_SEND\_PAGES&NUMBER(10,0)&发送页数\\
+		\hline
+		D\_SEND\_DATETIME&VARCHAR2 (20)&发送时间\\
+		\hline
+		L\_FILE\_ID&NUMBER(10,0)&发送的文件ID\\
+		\hline
+		C\_OVER&Bit (1)&任务结束标识\\
+		\hline
+		C\_SUCCESS&Bit (1)&任务成功标识\\
+		\hline
+		VC\_ERROR\_DESC&VARCHAR2 (500)&错误详情\\
+		\hline
+		C\_SEND\_FLAG&Bit (1)&允许发送标识\\
+		\bottomrule
+	\end{tabular}
+	\label{table:faxDefTab}
+\end{table}
+
+\begin{table}[htb]\footnotesize
+	\centering
+	\caption{邮件发送表结构}
+	\vspace{2mm}
+	% l - left, r - right, c - center. | means one vertical line 这里声明的是表格单元中的内容如何对齐
+	\begin{tabular}{ccc}
+		\hline
+		\textbf{字段名}&\textbf{类型}&\textbf{备注}\\
+		\hline
+		L\_MAIL\_ID&NUMBER(10,0)&邮件ID\\
+		\hline
+		VC\_MAIL\_ADDRESS&VARCHAR2 (20)&收件人邮件地址\\
+		\hline
+		VC\_TEL&VARCHAR2 (20)&收件人手机号\\
+		\hline
+		VC\_SUBJECT&VARCHAR2 (20)&收件人主题\\
+		\hline
+		VC\_BODY&VARCHAR2 (20)&邮件信息\\
+		\hline
+		D\_SCHEDULED\_DATETIME&VARCHAR2 (20)&调度最早时间\\
+		\hline
+		L\_FILE\_ID&NUMBER(10,0)&发送的文件ID\\
+		\hline
+		C\_OVER&Bit (1)&任务结束标识\\
+		\hline
+		C\_SUCCESS&Bit (1)&任务成功标识\\
+		\hline
+		VC\_ERROR\_DESC&VARCHAR2 (500)&错误详情\\
+		\hline
+		C\_SEND\_FLAG&Bit (1)&允许发送标识\\
+		\bottomrule
+	\end{tabular}
+	\label{table:mailDefTab}
+\end{table}
