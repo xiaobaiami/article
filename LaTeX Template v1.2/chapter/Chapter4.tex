@@ -1,15 +1,66 @@
 \chapter{系统详细设计与实现}
+本章节对文件发送平台的详细设计和相关实现细节进行论述，主要涉及平台后端的实现，需求分析章节提到的各个模块，重点介绍关键代码。
+
+\section{项目基本构建与配置}
+\subsection{项目依赖}
+本项目采用Spring Boot 搭建，除了在pom 文件中引入必要的Web、JPA、openfeign、eureka 相关的start，还需要引入pdfbox、itextpdf、jacob等依赖。在配置文件中配置好数据库、eureka、ribbon、hystrix相关配置。
+表~\ref{table:dependency} 列出了除Spring Boot 和 Spring Cloud 以外的主要Jar 包依赖及其说明。
+Spring Boot 和 Spring Cloud 的包比较多，而且资料丰富，这里就不详细列出，需要注意二者的版本需要适配即可，在官网上就可以找到二者相搭配使用的版本。
+\begin{table}[htb]\footnotesize
+	\centering
+	\caption{主要Jar 包依赖}
+	\vspace{2mm}
+    \label{table:dependency}
+    \begin{tabular}{|c|c|c|c|}
+        \hline
+        \textbf{名称} & \textbf{组织} & \textbf{版本} & \textbf{说明} \\ \hline
+        itextpdf & com.itextpdf & 5.5.13 & pdf处理相关 \\ \hline
+        pdfbox & org.apache.pdfbox & 2.0.15 & pdf处理相关 \\ \hline
+        itext-asian & com.itextpdf & 5.2.0 & pdf处理相关 \\ \hline
+        javax.mail & com.sun.mail & 1.6.0 & 邮件相关 \\ \hline
+        jacob & com.hynnet & 1.14.3 & officeAPI相关 \\ \hline
+        cxf-spring-boot-starter-jaxws & org.apache.cxf & 3.2.6 & webservice相关 \\ \hline
+        commons-beanutils & commons-beanutils & 1.9.3 & 工具包 \\ \hline
+        mlibwrapper\_jar & com.sun.medialib & 1.1 & 图片处理相关 \\ \hline
+        jai\_codec & com.sun.media & 1.1-mr & 图片处理相关 \\ \hline
+        jai\_core & javax.media & 1.1-mr & 图片处理相关 \\ \hline
+        ojdbc6 & com.oracle & 11.2.0.4.0-atlassian-hosted & 数据库相关 \\ \hline
+    \end{tabular}
+\end{table}
+
+\subsection{数据库表及POJO 类}
+SpringBoot框架中的Hibernate 实现了JPA 规范，不仅提供了ORM，还可以根据实体来自动创建数据库中的表，并对POJO的基本操作进行封装，用极简的代码实现了对数据库的访问和操作，包括了增、删、改、查等在内的常用功能。
+用户只需要创建好POJO 类和对应的JpaRepository 接口就可以使用框架提供的大量方法，相关代码如图 ~\ref{code1} 所示，这里对字段做了简化，同样的可以创建好其他POJO 类以及接口。
+在配置文件中配置好datasource 和jpa 的信息，
+启动项目，项目正常运行后在数据库中查看是否生成对应的表。
+
+\begin{figure}[htb]
+	\centering
+	\includegraphics[width=12cm]{codepic/code1.png}
+	\caption{代理商POJO操作代码}\label{code1}
+\end{figure}
+
+\subsection{Eureka 服务配置}
+项目启动后需要向Eureka 注册，并需要从Eureka获取邮件、传真微服务信息以供RPC调用。
+在配置文件中需要指定Eureka 的相关参数，主要提供Eureka 服务器的地址。
+项目注册到Eureka 中，还需要为自己指定一个名字作为唯一标识，在资源文件夹resources 中创建bootstrap.properties 文件，在文件中设定spring.application.name 的值来命名项目。
+启动项目后在Eureka 中应该可以见到项目的名字。
+
+配置RPC调用。首先在启动类中添加 @EnableFeignClients 注解。
+然后在合适的包中创建服务接口，使用 @FeignClient 注解来标记接口，并给定参数value 为需要调用的服务名，创建方法并指定http的url。
+如图 ~\ref{code2} 是短信的RPC 调用。同样可以创建邮件、传真RPC 接口。
+\begin{figure}[htb]
+	\centering
+	\includegraphics[width=12cm]{codepic/code2.png}
+	\caption{代理商POJO操作代码}\label{code1}
+\end{figure}
+
 
 \section{元数据管理模块详细设计与实现}
 元数据管理模块主要负责代理商信息和系统基本配置信息的管理。
 
 
-SpringBoot框架的JPA提供了对POJO的基本操作封装,简化了对数据库的操作。这里使用JpaRepository来实现对POJO的访问，如图 ~\ref{code1} 所示
-\begin{figure}[htb]
-	\centering
-	\includegraphics[width=\linewidth]{codepic/code1.png}
-	\caption{代理商POJO操作代码}\label{code1}
-\end{figure}
+
 
 \section{发送规则模块详细设计与实现}
 
